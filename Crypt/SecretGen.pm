@@ -223,16 +223,18 @@ sub _set_valid_chars {
 									# (Make sure it's not bigger than the password length).
 	my $hasOptionalChars;	#--- Nonzero when we have at least 1 non-required character to use.
 	unless ($opts->{$self}->{nodefault}) {
-		my $list;
+		my $defaultList;
 		#--- Default valid characters are 0-9, A-Z, and a-z.
-		$list .= chr ($_) for (ord('0')..ord('9'), ord('a')..ord('z'), ord('A')..ord('Z'));
-		$opts->{$self}->{v}->{$list} = 'n';
+		$defaultList .= chr ($_) for (ord('0')..ord('9'), ord('a')..ord('z'), ord('A')..ord('Z'));
+		$opts->{$self}->{v}->{$defaultList} = 'n';
 		$hasOptionalChars = 1;
 	}
 	foreach my $list (@{$opts->{$self}->{charlists}}) {
+		# Extract the count requirement for the given character list.
 		my $numRequired;
 		if ($list =~ s/^(\d+)://) { $numRequired = $1; }
 		else { $hasOptionalChars = 1; }
+
 		if (my @ranges = ($list =~ /((.)(?<!\\\.)(-|\.\.)(.))/g)) {
 			for (my $c=0; $c<=$#ranges; $c+=4) {
 				my $curRange = $ranges[$c];
@@ -243,7 +245,7 @@ sub _set_valid_chars {
 					$self->err ('Byte val of START larger than END for char range "'.$curRange.'". Range used in reverse.');
 					$curRange = $ranges[$c+3] . $ranges[$c+2] . $ranges[$c+1];
 				}
-				$list = $curRange;
+				$list .= $curRange;
 		}	}
 		$opts->{$self}->{v}->{$list} = ($numRequired || 'n');
 		$reqCharsCount += $numRequired;
